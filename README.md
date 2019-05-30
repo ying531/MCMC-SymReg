@@ -13,5 +13,7 @@ In the ReassignOperator transition, unary and binary operators are able to chang
 ## demo3.py
 Let the input operators be stored in a list and can assign weight to the specified operators.
 
+The probability of Grow is $\frac{1-p_0}{2}\cdot \min \{ 1,\frac{5}{N+d+2} \}$.
+
 ## demo4.py(editing)
 Add new actions, transform and detransform.
