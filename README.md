@@ -29,7 +29,7 @@ Uniformly pick a unary nonlinear node and substitute it with its child.
 
 P_grow = (1-p_0)/3 * min {1,5/(N+d+2)}
 
-P_prune = (1-p_0)/4 - P_grow
+P_prune = (1-p_0)/3 - P_grow
 
 P_detrans = (1-p_0)/3 * (n1 / 2+ n1), n1 is the number of unary nonlinear nodes
 
