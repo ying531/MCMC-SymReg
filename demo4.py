@@ -274,7 +274,20 @@ def numLT(node):
             return numLT(node.left)
     else:
         return numLT(node.left)+numLT(node.right)
-
+    
+# =============================================================================
+# # update depth of all nodes 
+# =============================================================================
+def upDepth(Root):
+    if Root.parent is None:
+        Root.depth = 0
+    else:
+        Root.depth = Root.parent.depth + 1
+    
+    if Root.left is not None:
+        upDepth(Root.left)
+        if Root.right is not None:
+            upDepth(Root.right)
 
 # =============================================================================
 # # returns a string of the expression of the tree
@@ -405,14 +418,26 @@ def Prop(Root,n_feature,Ops,Op_weights,Op_type,beta,sigma_a,sigma_b):
             
     # get the list of lt() nodes
     Lins = []
+    Trans = []
     for i in np.arange(0,len(Tree)):
         if Tree[i].operator == 'ln':
             Lins.append(Tree[i])
+        elif Tree[i].type == 1:
+            Trans.append(Tree[i])
             
     # get necessary quantities
     ltNum = len(Lins)
     nodeNum = len(Tree)
     height = getHeight(Root)
+    transNum = len(Trans)
+    
+    add_ops = []
+    add_opind = []
+    for i in np.arange(len(Ops)):
+        if Op_type[i] == 1 and Ops[i] != 'ln' and Ops[i] != 'neg':
+            add_ops.append(Ops[i])
+            add_opind.append(i)
+                
             
     # record expansion and shrinkage
     # expansion occurs when num of lt() increases
@@ -428,9 +453,11 @@ def Prop(Root,n_feature,Ops,Op_weights,Op_type,beta,sigma_a,sigma_b):
 
     # probs of each action
     p_stay = 0.25 * ltNum / (ltNum+3)
-    p_grow = 0.75*(1-p_stay)* min(1,5/(len(Nterm)+4))
-    p_prune = (1-p_stay)*0.75 - p_grow
-    p_rop = (1-p_stay)/8
+    p_grow = (1-p_stay)* min(1,5/(len(Nterm)+4))/3
+    p_prune = (1-p_stay)/3 - p_grow
+    p_detr = (1-p_stay) * (transNum-1)/(3*(2+transNum))
+    p_trans = (1-p_stay)/(3*(nodeNum+10))
+    p_rop = (1-p_stay - p_grow - p_prune - p_detr - p_trans)/2
     
     # auxiliary
     test = np.random.uniform(0,1,1)[0]
@@ -526,7 +553,61 @@ def Prop(Root,n_feature,Ops,Op_weights,Op_type,beta,sigma_a,sigma_b):
         pg = 1 - 0.25 * new_ltNum/(new_ltNum+3)*0.75 * min(1,5/(len(new_nTerm)+4))
         Qinv = pg * np.exp(fstrc[0])/len(newTerm)
         
-
+    # detransformation
+    elif test <= p_stay + p_grow + p_prune + p_detr:
+        action = 'detransform'
+        det_od = np.random.randint(0,transNum,1)[0]
+        det_node = Trans[det_od]
+        if det_node.parent is None:
+            Root = det_node.left
+        else:
+            det_node.parent.left = det_node.left
+            det_node.left.parent = det_node.parent
+        # update depth
+        upDepth(Root)
+        
+        # calculate Q
+        Q = p_detr / transNum
+        # calculate Qinv (correspond to transform)
+        Qinv = (1-p_stay)/(3*(nodeNum+9)*len(add_ops))
+        
+        
+    # transformation
+    elif test <= p_stay + p_grow + p_prune + p_detr + p_trans:
+        action = "transform"
+        add_od = np.random.randint(0,nodeNum,1)[0]
+        add_node = Tree[add_od]
+        
+        add_ = np.random.randint(0,len(add_ops),1)[0]
+        add_op = add_ops[add_]
+        
+        # add the transformation
+        new_node = Node(add_node.depth)
+        new_node.operator = add_op
+        new_node.op_ind = add_opind[add_]
+        new_node.type = 1
+        
+        if add_node.parent is None: #root
+            new_node.left = add_node
+            add_node.parent = new_node
+            Root = new_node
+            
+        else:
+            if add_node.parent.left is add_node:
+                add_node.parent.left = new_node
+                new_node.left = add_node
+                add_node.parent = new_node
+            else:
+                add_node.parent.right = new_node
+                new_node.left = add_node
+                add_node.parent = new_node
+                
+        upDepth(Root)
+        
+        # calculate Q
+        Q = p_trans / len(add_ops)
+        # calculate Qinv
+        Qinv = (1-p_stay) * transNum/(3*(3+transNum)*(1+transNum))
     
     # reassignOperator
     elif test <= p_stay + p_grow + p_prune + p_rop:
