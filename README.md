@@ -1,7 +1,7 @@
 # MCMC-SymReg
 symbolic regression using mcmc sampling
 
-##Symbolic_Regression_Tree_MCMC.pdf
+## Symbolic_Regression_Tree_MCMC.pdf
 Note for proposed algorithm.
 
 ## demo.py
