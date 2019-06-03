@@ -453,9 +453,9 @@ def Prop(Root,n_feature,Ops,Op_weights,Op_type,beta,sigma_a,sigma_b):
 
     # probs of each action
     p_stay = 0.25 * ltNum / (ltNum+3)
-    p_grow = (1-p_stay)* min(1,5/(len(Nterm)+4))/3
+    p_grow = (1-p_stay)* min(1,3/(len(Nterm)+2))/3
     p_prune = (1-p_stay)/3 - p_grow
-    p_detr = (1-p_stay) * (transNum-1)/(3*(2+transNum))
+    p_detr = (1-p_stay) * max(0,(transNum-1)/(3*(2+transNum)))
     p_trans = (1-p_stay)/(3*(nodeNum+10))
     p_rop = (1-p_stay - p_grow - p_prune - p_detr - p_trans)/2
     
@@ -504,7 +504,7 @@ def Prop(Root,n_feature,Ops,Op_weights,Op_type,beta,sigma_a,sigma_b):
                 else:
                     new_nterm.append(newTree[i])
             new_termNum = len(newTerm)
-            new_p = (1- 0.25 * new_ltNum/(ltNum+3))*0.75* (1- min(1,5/(len(new_nterm)+4)))
+            new_p = (1- 0.25 * new_ltNum/(ltNum+3))*0.75* (1- min(1,3/(len(new_nterm)+2)))
             Qinv = new_p / (new_nodeNum-new_termNum-1) #except root node
             
             if new_ltNum > ltNum:
@@ -550,7 +550,7 @@ def Prop(Root,n_feature,Ops,Op_weights,Op_type,beta,sigma_a,sigma_b):
         Q = p_prune / ((len(Nterm)-1)*n_feature)
         
         #calculate Qinv (correspond to grow)
-        pg = 1 - 0.25 * new_ltNum/(new_ltNum+3)*0.75 * min(1,5/(len(new_nTerm)+4))
+        pg = 1 - 0.25 * new_ltNum/(new_ltNum+3)*0.75 * min(1,3/(len(new_nTerm)+2))
         Qinv = pg * np.exp(fstrc[0])/len(newTerm)
         
     # detransformation
@@ -560,6 +560,7 @@ def Prop(Root,n_feature,Ops,Op_weights,Op_type,beta,sigma_a,sigma_b):
         det_node = Trans[det_od]
         if det_node.parent is None:
             Root = det_node.left
+            Root.parent = None
         else:
             det_node.parent.left = det_node.left
             det_node.left.parent = det_node.parent
@@ -586,6 +587,7 @@ def Prop(Root,n_feature,Ops,Op_weights,Op_type,beta,sigma_a,sigma_b):
         new_node.operator = add_op
         new_node.op_ind = add_opind[add_]
         new_node.type = 1
+        new_node.parent = add_node.parent
         
         if add_node.parent is None: #root
             new_node.left = add_node
@@ -603,7 +605,6 @@ def Prop(Root,n_feature,Ops,Op_weights,Op_type,beta,sigma_a,sigma_b):
                 add_node.parent = new_node
                 
         upDepth(Root)
-        
         # calculate Q
         Q = p_trans / len(add_ops)
         # calculate Qinv
@@ -655,6 +656,7 @@ def Prop(Root,n_feature,Ops,Op_weights,Op_type,beta,sigma_a,sigma_b):
                     cnode.b = None
                     # grow a new sub-tree rooted at right child
                 cnode.right = Node(cnode.depth +1)
+                cnode.right.parent = cnode
                 grow(cnode.right,n_feature,Ops,Op_weights,Op_type,beta,sigma_a,sigma_b)
                 fstrc = fStruc(cnode.right,n_feature,Ops,Op_weights,Op_type,beta,sigma_a,sigma_b)
                 
@@ -737,7 +739,8 @@ def Prop(Root,n_feature,Ops,Op_weights,Op_type,beta,sigma_a,sigma_b):
         # calculate Q,Qinv (equal)
         Q = Qinv = 1
         
-        
+    
+    upDepth(Root) 
         
         
     return [oldRoot,Root,lnPointers,change,Q,Qinv,last_a,last_b,cnode]
@@ -1236,7 +1239,7 @@ test_data.index = np.arange(0,n_test)
 # =============================================================================
 # # y=6*sinx1*cosx2
 # =============================================================================
-random.seed(1)
+random.seed(2)
 n = 100
 x1 = np.random.uniform(0.1,5.9,n)
 x2 = np.random.uniform(0.1,5.9,n)
