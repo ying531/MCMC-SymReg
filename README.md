@@ -15,19 +15,15 @@ Let the input operators be stored in a list and can assign weight to the specifi
 
 The probability of Grow is $\frac{1-p_0}{2}\cdot \min \{ 1,\frac{5}{N+d+2} \}$.
 
-## demo4.py(editing)
+## demo4.py
 Add new actions, transform and detransform.
 
-Trans: 
-
+### Trans: 
 Uniformly pick a node and add a unary nonlinear node between it and its parent.
-
-Detrans: 
-
+### Detrans: 
 Uniformly pick a unary nonlinear node and substitute it with its child.
 
-
-P_grow = (1-p_0)/3 * min {1,5/(N+d+2)}
+P_grow = (1-p_0)/3 * min {1,5/(N_nt+2)}, N_nt is the number of non-terminal nodes
 
 P_prune = (1-p_0)/3 - P_grow
 
@@ -36,3 +32,13 @@ P_detrans = (1-p_0)/3 * (n1 / 2+ n1), n1 is the number of unary nonlinear nodes
 P_trans = (1-p_0)/ [3*(N+5)], N is the number of all nodes
 
 P_reop = P_refeat = (1-P_grow-P_prune-P_detrans-P_trans)/2
+
+## demo5.py
+Modify the definition of transform and detransform.
+
+### Trans:
+take the current tree as a sub-tree and add operator +,* if tree is relatively small;
+Or uniformly pick a node and add a unary nonlinear node between it and its parent.
+### Detrans:
+take off the root node and preserve the left child sub-tree;
+or randomly pick a unary nonlinear node which is parent of a terminal node and prune it.
