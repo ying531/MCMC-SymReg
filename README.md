@@ -22,7 +22,7 @@ Add new actions, transform and detransform.
 Uniformly pick a node and add a unary nonlinear node between it and its parent.
 ### Detrans: 
 Uniformly pick a unary nonlinear node and substitute it with its child.
-
+### Proposal:
 P_grow = (1-p_0)/3 * min {1,5/(N_nt+2)}, N_nt is the number of non-terminal nodes
 
 P_prune = (1-p_0)/3 - P_grow
@@ -42,3 +42,13 @@ Or uniformly pick a node and add a unary nonlinear node between it and its paren
 ### Detrans:
 take off the root node and preserve the left child sub-tree;
 or randomly pick a unary nonlinear node which is parent of a terminal node and prune it.
+### Proposal:
+P_grow = (1-p_0)/3 * min {1,5/(N_nt+2)}, N_nt is the number of non-terminal nodes
+
+P_prune = (1-p_0)/3 - P_grow
+
+P_detrans = (1-p_0)/3 * (N / N+4), N is the number of nodes; If there are nonlinear unary node, delete it with prob n/(n+3), else take off the root node.
+
+P_trans = (1-p_0)/ 3 - P_detrans
+
+P_reop = P_refeat = (1-p_0)/ 6
