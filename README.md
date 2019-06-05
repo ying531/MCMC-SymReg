@@ -47,8 +47,8 @@ P_grow = (1-p_0)/3 * min {1,4/(N_nt+2)}, N_nt is the number of non-terminal node
 
 P_prune = (1-p_0)/3 - P_grow
 
-P_detrans = (1-p_0)/3 * (N / N+3), N is the number of candidate nodes.
+P_detrans = (1-p_0)/3 * (Nc / Nc+3), Nc is the number of candidates for detransformation.
 
-P_trans = (1-p_0)/ 3 - P_detrans; With probability 1/2 add operator as root, otherwise pick a node and add unary nonlinear node.
+P_trans = (1-p_0)/ 3 - P_detrans; The probs added nodes should be proportional to the preset weights.
 
 P_reop = P_refeat = (1-p_0)/ 6
