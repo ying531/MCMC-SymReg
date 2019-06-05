@@ -375,6 +375,7 @@ def fStruc(node,n_feature,Ops,Op_weights,Op_type,beta,sigma_a,sigma_b):
     
     return [loglike, loglike_para]
 
+        
 
 # =============================================================================
 # # propose a new tree from existing Root        
@@ -418,34 +419,34 @@ def Prop(Root,n_feature,Ops,Op_weights,Op_type,beta,sigma_a,sigma_b):
             
     # get the list of lt() nodes
     Lins = []
-    Trans = []
     for i in np.arange(0,len(Tree)):
         if Tree[i].operator == 'ln':
             Lins.append(Tree[i])
-        elif Tree[i].type == 1:
-            Trans.append(Tree[i])
-            
-    # get necessary quantities
     ltNum = len(Lins)
-    nodeNum = len(Tree)
-    height = getHeight(Root)
-    transNum = len(Trans)
-    
-    add_ops = []
-    add_opind = []
-    for i in np.arange(len(Ops)):
-        if Op_type[i] == 1 and Ops[i] != 'ln' and Ops[i] != 'neg':
-            add_ops.append(Ops[i])
-            add_opind.append(i)
-                
             
     # record expansion and shrinkage
     # expansion occurs when num of lt() increases
     # shrinkage occurs when num of lt() decreases
-    change = ''     
+    change = ''
     Q = Qinv = 1
 
-    
+    # qualified candidates for detransformation
+    detcd = []
+    # for detransformation: not root or root but child nodes are not all terminal
+    # transformation can be applied to any node
+    for i in np.arange(len(Tree)):
+        flag = True
+        if Tree[i].type == 0:# terminal is not allowed
+            flag = False
+        if Tree[i].parent is None:#root
+            if Tree[i].right is None and Tree[i].left.type == 0:
+                flag = False
+            elif Tree[i].left.type == 0 and Tree[i].right.type == 0:
+                flag = False
+        
+        if flag == True:
+            detcd.append(Tree[i])
+        
     
     ###############################
     # decide which action to take #
@@ -453,11 +454,11 @@ def Prop(Root,n_feature,Ops,Op_weights,Op_type,beta,sigma_a,sigma_b):
 
     # probs of each action
     p_stay = 0.25 * ltNum / (ltNum+3)
-    p_grow = (1-p_stay)* min(1,3/(len(Nterm)+2))/3
+    p_grow = (1-p_stay)* min(1,4/(len(Nterm)+2))/3
     p_prune = (1-p_stay)/3 - p_grow
-    p_detr = (1-p_stay) * max(0,(transNum-1)/(3*(2+transNum)))
-    p_trans = (1-p_stay)/(3*(nodeNum+10))
-    p_rop = (1-p_stay - p_grow - p_prune - p_detr - p_trans)/2
+    p_detr = (1-p_stay) * (1/3) * len(detcd)/(3+len(detcd))
+    p_trans = (1-p_stay)/3 - p_detr
+    p_rop = (1-p_stay)/6
     
     # auxiliary
     test = np.random.uniform(0,1,1)[0]
@@ -504,8 +505,8 @@ def Prop(Root,n_feature,Ops,Op_weights,Op_type,beta,sigma_a,sigma_b):
                 else:
                     new_nterm.append(newTree[i])
             new_termNum = len(newTerm)
-            new_p = (1- 0.25 * new_ltNum/(ltNum+3))*0.75* (1- min(1,3/(len(new_nterm)+2)))
-            Qinv = new_p / (new_nodeNum-new_termNum-1) #except root node
+            new_p = (1- 0.25 * new_ltNum/(new_ltNum+3))* (1- min(1,4/(len(new_nterm)+2)))/3
+            Qinv = new_p / max(1,(new_nodeNum-new_termNum-1)) #except root node
             
             if new_ltNum > ltNum:
                 change = 'expansion'
@@ -550,68 +551,221 @@ def Prop(Root,n_feature,Ops,Op_weights,Op_type,beta,sigma_a,sigma_b):
         Q = p_prune / ((len(Nterm)-1)*n_feature)
         
         #calculate Qinv (correspond to grow)
-        pg = 1 - 0.25 * new_ltNum/(new_ltNum+3)*0.75 * min(1,3/(len(new_nTerm)+2))
+        pg = 1 - 0.25 * new_ltNum/(new_ltNum+3)*0.75 * min(1,4/(len(new_nTerm)+2))
         Qinv = pg * np.exp(fstrc[0])/len(newTerm)
         
     # detransformation
     elif test <= p_stay + p_grow + p_prune + p_detr:
         action = 'detransform'
-        det_od = np.random.randint(0,transNum,1)[0]
-        det_node = Trans[det_od]
-        if det_node.parent is None:
-            Root = det_node.left
+        
+        det_od = np.random.randint(0,len(detcd),1)[0]
+        det_node = detcd[det_od]
+        cutt = None
+        
+        #print("cutted op:",det_node.operator)
+        
+        Q = p_detr / len(detcd)
+        
+        if det_node.parent is None:#root
+            if det_node.right is None:#one child
+                Root = Root.left
+            else:# two children
+                if det_node.left.type == 0:# left is terminal
+                    cutt = Root.left
+                    Root = Root.right
+                elif det_node.right.type == 0:#right is terminal
+                    cutt = Root.right
+                    Root = Root.left
+                else:#both are non-terminal
+                    aa = np.random.uniform(0,1,1)[0]
+                    if aa <= 0.5: #preserve left
+                        cutt = Root.right
+                        Root = Root.left
+                    else:
+                        cutt = Root.left
+                        Root = Root.right
+                    Q = Q/2
             Root.parent = None
-        else:
-            det_node.parent.left = det_node.left
-            det_node.left.parent = det_node.parent
-        # update depth
-        upDepth(Root)
+            upDepth(Root)
+        else:#not root, non-terminal
+            if det_node.type == 1:#unary
+                if det_node.parent.left is det_node: #left child of its parent
+                    det_node.parent.left = det_node.left
+                    det_node.left.parent = det_node.parent
+                else:
+                    det_node.parent.right = det_node.right
+                    det_node.left.parent = det_node.parent
+            else:#binary
+                aa = np.random.uniform(0,1,1)[0]
+                if aa <= 0.5:#preserve left
+                    cutt = det_node.right
+                    if det_node.parent.left is det_node:
+                        det_node.parent.left = det_node.left
+                        det_node.left.parent = det_node.parent
+                    else:
+                        det_node.parent.right = det_node.left
+                        det_node.left.parent = det_node.parent
+                else:#preserve right
+                    cutt = det_node.left
+                    if det_node.parent.left is det_node:
+                        det_node.parent.left = det_node.right
+                        det_node.right.parent = det_node.parent
+                    else:
+                        det_node.parent.right = det_node.right
+                        det_node.right.parent = det_node.parent 
+                Q = Q/2
+            upDepth(Root)
         
-        # calculate Q
-        Q = p_detr / transNum
+        # the number of linear nodes may decrease
+        new_ltnum = 0
+        new_tree = genList(Root)
+        for i in np.arange(len(new_tree)):
+            if new_tree[i].operator == 'ln':
+                new_ltnum += 1
+        if new_ltnum < ltNum:
+            change = 'shrinkage'
+        
+        new_pstay = 0.25 * new_ltnum / (new_ltnum+3)
+        
         # calculate Qinv (correspond to transform)
-        Qinv = (1-p_stay)/(3*(nodeNum+9)*len(add_ops))
+        new_detcd = []
+        for i in np.arange(len(new_tree)):
+            flag = True
+            if new_tree[i].type == 0:# terminal is not allowed
+                flag = False
+            if new_tree[i].parent is None:#root
+                if new_tree[i].right is None and new_tree[i].left.type == 0:
+                    flag = False
+                elif new_tree[i].left.type == 0 and new_tree[i].right.type == 0:
+                    flag = False
+            if flag == True:
+                new_detcd.append(new_tree[i])
+        new_pdetr = (1-new_pstay) *(1/3) * len(new_detcd)/(len(new_detcd)+3)
+        new_ptr = (1-new_pstay)/3 - new_pdetr
+        Qinv = new_ptr * Op_weights[det_node.op_ind] /len(new_tree)
+        if cutt is not None:
+            fstrc = fStruc(cutt,n_feature,Ops,Op_weights,Op_type,beta,sigma_a,sigma_b)
+            Qinv = Qinv * np.exp(fstrc[0])
         
         
+        
+                
     # transformation
     elif test <= p_stay + p_grow + p_prune + p_detr + p_trans:
         action = "transform"
-        add_od = np.random.randint(0,nodeNum,1)[0]
-        add_node = Tree[add_od]
         
-        add_ = np.random.randint(0,len(add_ops),1)[0]
-        add_op = add_ops[add_]
+        # transform means uniformly pick a node and add an operator as its parent
+        # probability of operators is specified by Op_weights
+        # adding unary operator is simple
+        # adding binary operator needs to generate a new sub-tree
+        Tree = genList(Root)
+        ins_ind = np.random.randint(0,len(Tree),1)[0]
+        ins_node = Tree[ins_ind]
+        ins_opind = np.random.choice(np.arange(0,len(Ops)),p=Op_weights)
+        ins_op = Ops[ins_opind]
+        ins_type = Op_type[ins_opind]
+        ins_opweight = Op_weights[ins_opind]
         
-        # add the transformation
-        new_node = Node(add_node.depth)
-        new_node.operator = add_op
-        new_node.op_ind = add_opind[add_]
-        new_node.type = 1
-        new_node.parent = add_node.parent
+        # create new node
+        new_node = Node(ins_node.depth)
+        new_node.operator = ins_op
+        new_node.type = ins_type
+        new_node.op_ind = ins_opind
         
-        if add_node.parent is None: #root
-            new_node.left = add_node
-            add_node.parent = new_node
-            Root = new_node
+        if ins_type == 1:#unary
+            if ins_op == 'ln':#linear node
+                new_node.a = norm.rvs(loc=1,scale=np.sqrt(sigma_a))
+                new_node.b = norm.rvs(loc=0,scale=np.sqrt(sigma_b))
+            if ins_node.parent is None:#inserted node is root
+                Root = new_node
+                new_node.left = ins_node
+                ins_node.parent = new_node
+            else:#inserted node is not root
+                if ins_node.parent.left is ins_node:
+                    ins_node.parent.left = new_node
+                else:
+                    ins_node.parent.right = new_node
+                new_node.parent = ins_node.parent
+                new_node.left = ins_node
+                ins_node.parent = new_node
+            upDepth(Root)
+            # calculate Q
+            Q = p_trans * ins_opweight / len(Tree)
             
-        else:
-            if add_node.parent.left is add_node:
-                add_node.parent.left = new_node
-                new_node.left = add_node
-                add_node.parent = new_node
-            else:
-                add_node.parent.right = new_node
-                new_node.left = add_node
-                add_node.parent = new_node
+        else:#binary
+            if ins_node.parent is None:#inserted node is root
+                Root = new_node
+                new_node.left = ins_node
+                ins_node.parent = new_node
+                new_right = Node(1)
+                new_node.right = new_right
+                new_right.parent = new_node
+                upDepth(Root)
+                grow(new_right,n_feature,Ops,Op_weights,Op_type,beta,sigma_a,sigma_b)
+                fstrc = fStruc(new_right,n_feature,Ops,Op_weights,Op_type,beta,sigma_a,sigma_b)
+                #calculate Q
+                Q = p_trans * ins_opweight * np.exp(fstrc[0]) / len(Tree) 
+            else:#inserted node is not root
+
+                #place the new node 
+                if ins_node.parent.left is ins_node:
+                    ins_node.parent.left = new_node
+                    new_node.parent = ins_node.parent
+                else:
+                    ins_node.parent.right = new_node
+                    new_node.parent = ins_node.parent
+                    
+                new_node.left = ins_node
+                ins_node.parent = new_node
+                new_right = Node(new_node.depth+1)
+                new_node.right = new_right
+                new_right.parent = new_node
+                upDepth(Root)
+                grow(new_right,n_feature,Ops,Op_weights,Op_type,beta,sigma_a,sigma_b)
+                fstrc = fStruc(new_right,n_feature,Ops,Op_weights,Op_type,beta,sigma_a,sigma_b)
                 
-        upDepth(Root)
-        # calculate Q
-        Q = p_trans / len(add_ops)
-        # calculate Qinv
-        Qinv = (1-p_stay) * transNum/(3*(3+transNum)*(1+transNum))
+                #calculate Q
+                Q = p_trans * ins_opweight * np.exp(fstrc[0]) /len(Tree)
+        
+
+        
+        # the number of linear nodes may decrease
+        new_ltnum = 0
+        new_tree = genList(Root)
+        for i in np.arange(len(new_tree)):
+            if new_tree[i].operator == 'ln':
+                new_ltnum += 1
+        if new_ltnum > ltNum:
+            change = 'expansion'
+        
+        # calculate Qinv (correspond to detransform)
+        new_pstay = 0.25 * new_ltnum / (new_ltnum+3)
+
+        new_detcd = []
+        for i in np.arange(len(new_tree)):
+            flag = True
+            if new_tree[i].type == 0:# terminal is not allowed
+                flag = False
+            if new_tree[i].parent is None:#root
+                if new_tree[i].right is None and new_tree[i].left.type == 0:
+                    flag = False
+                elif new_tree[i].left.type == 0 and new_tree[i].right.type == 0:
+                    flag = False
+            if flag == True:
+                new_detcd.append(new_tree[i])
+                
+        new_pdetr = (1-new_pstay) *(1/3) * len(new_detcd)/(len(new_detcd)+3)
+        new_ptr = (1-new_pstay)/3 - new_pdetr
+        
+        Qinv = new_pdetr / len(new_detcd)
+        if new_node.type == 2:
+            if new_node.left.type > 0 and new_node.right.type >0:
+                Qinv = Qinv/2
+
+
     
     # reassignOperator
-    elif test <= p_stay + p_grow + p_prune + p_rop:
+    elif test <= p_stay + p_grow + p_prune + p_detr + p_trans + p_rop:
         action = 'ReassignOperator'
         #print("action:",action)
         pod = np.random.randint(0,len(Nterm),1)[0]
@@ -741,7 +895,7 @@ def Prop(Root,n_feature,Ops,Op_weights,Op_type,beta,sigma_a,sigma_b):
         
     
     upDepth(Root) 
-        
+    #print(action)
         
     return [oldRoot,Root,lnPointers,change,Q,Qinv,last_a,last_b,cnode]
 
@@ -1237,16 +1391,16 @@ test_data.index = np.arange(0,n_test)
 
 
 # =============================================================================
-# # y=6*sinx1*cosx2
+# # y=2.5*exp(x0)+cos(x1)
 # =============================================================================
-random.seed(2)
+random.seed(1)
 n = 100
 x1 = np.random.uniform(0.1,5.9,n)
 x2 = np.random.uniform(0.1,5.9,n)
 x1 = pd.DataFrame(x1)
 x2 = pd.DataFrame(x2)
 train_data = pd.concat([x1,x2],axis=1)
-train_y = 6 * np.sin(train_data.iloc[:,0]) * np.cos(train_data.iloc[:,1])
+train_y = 2.5 * np.exp(train_data.iloc[:,0]) + np.cos(train_data.iloc[:,1])
 xx1 = []
 xx2 = []
 for i in np.arange(31):
@@ -1256,7 +1410,7 @@ for i in np.arange(31):
 xx1 = pd.DataFrame(xx1)
 xx2 = pd.DataFrame(xx2)
 test_data = pd.concat([xx1,xx2],axis=1)
-test_y = 6 * np.sin(test_data.iloc[:,0]) * np.cos(test_data.iloc[:,1])
+test_y = 2.5 * np.exp(test_data.iloc[:,0]) + np.cos(test_data.iloc[:,1])
 
 
 # =============================================================================
@@ -1269,11 +1423,11 @@ n_test = test_data.shape[0]
 
 alpha1 = 0.4
 alpha2 = 0.4
-beta = -1.2
+beta = -0.8
 
-Ops = ['inv','ln','neg','sin','cos','+','*']
-Op_weights = [0.15,0.15,0.1,0.15,0.15,0.15,0.15]
-Op_type = [1,1,1,1,1,2,2]
+Ops = ['inv','ln','neg','sin','cos','exp','+','*']
+Op_weights = [0.15,0.15,0.1,0.05,0.05,0.15,0.2,0.15]
+Op_type = [1,1,1,1,1,1,2,2]
 n_op = len(Ops)
 
 K = 5
