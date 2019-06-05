@@ -37,18 +37,18 @@ P_reop = P_refeat = (1-P_grow-P_prune-P_detrans-P_trans)/2
 Modify the definition of transform and detransform.
 
 ### Trans:
-take the current tree as a sub-tree and add operator +,* if tree is relatively small;
-Or uniformly pick a node and add a unary nonlinear node between it and its parent.
+take a candidate node and place some operator as its parent
 ### Detrans:
-take off the root node and preserve the left child sub-tree;
-or randomly pick a unary nonlinear node which is parent of a terminal node and prune it.
+take a candidate node and delete it; the candidate should not be 'ln', should not be the root if its child nodes are all terminal.
+
+if it has two child nodes, randomly preserve one child (need to be non-terminal).
 ### Proposal:
-P_grow = (1-p_0)/3 * min {1,5/(N_nt+2)}, N_nt is the number of non-terminal nodes
+P_grow = (1-p_0)/3 * min {1,4/(N_nt+2)}, N_nt is the number of non-terminal nodes
 
 P_prune = (1-p_0)/3 - P_grow
 
-P_detrans = (1-p_0)/3 * (N / N+4), N is the number of nodes; If there are nonlinear unary node, delete it with prob n/(n+3), else take off the root node.
+P_detrans = (1-p_0)/3 * (N / N+3), N is the number of candidate nodes.
 
-P_trans = (1-p_0)/ 3 - P_detrans
+P_trans = (1-p_0)/ 3 - P_detrans; With probability 1/2 add operator as root, otherwise pick a node and add unary nonlinear node.
 
 P_reop = P_refeat = (1-p_0)/ 6
