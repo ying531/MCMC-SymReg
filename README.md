@@ -37,9 +37,9 @@ P_reop = P_refeat = (1-P_grow-P_prune-P_detrans-P_trans)/2
 Modify the definition of transform and detransform.
 
 ### Trans:
-take a candidate node and place some operator as its parent
+Uniformly take a candidate node and place some operator as its parent
 ### Detrans:
-take a candidate node and delete it; the candidate should not be 'ln', should not be the root if its child nodes are all terminal.
+Uniformly take a candidate node and delete it; the candidate should not be 'ln', should not be the root if its child nodes are all terminal.
 
 if it has two child nodes, randomly preserve one child (need to be non-terminal).
 ### Proposal:
