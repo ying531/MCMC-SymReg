@@ -36,9 +36,9 @@ P_reop = P_refeat = (1-P_grow-P_prune-P_detrans-P_trans)/2
 ## demo5.py
 Modify the definition of transform and detransform.
 
-### Trans:
+### Insert:
 Uniformly take a candidate node and place some operator as its parent
-### Detrans:
+### Delete:
 Uniformly take a candidate node and delete it; the candidate node should be non-terminal, and should not be the root if its child nodes are all terminal.
 
 if it has two child nodes, randomly preserve one child (need to be non-terminal).
@@ -47,10 +47,10 @@ P_grow = (1-p_0)/3 * min {1,4/(N_nt+2)}, N_nt is the number of non-terminal node
 
 P_prune = (1-p_0)/3 - P_grow
 
-P_detrans = (1-p_0)/3 * (Nc / Nc+3), Nc is the number of candidates for detransformation.
+P_delete = (1-p_0)/3 * (Nc / Nc+3), Nc is the number of candidates for deletion.
 
-P_trans = (1-p_0)/ 3 - P_detrans; The probs added nodes should be proportional to the preset weights.
+P_insert = (1-p_0)/ 3 - P_delete; The probs added nodes should be proportional to the preset weights.
 
 P_reop = P_refeat = (1-p_0)/ 6
 
-consider the proportions of (p_grow+p_prune), (p_detrans+p_trans), (p_reop+p_refeat)
+consider the proportions of (p_grow+p_prune), (p_delete+p_insert), (p_reop+p_refeat)
