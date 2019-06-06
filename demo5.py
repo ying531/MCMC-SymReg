@@ -178,9 +178,19 @@ def allcal(node,indata):
         if node.operator == 'ln':
             node.data = node.a * allcal(node.left,indata) + node.b
         elif node.operator == 'exp':
-            node.data = np.exp(allcal(node.left,indata))
+            node.data = allcal(node.left,indata)
+            for i in np.arange(len(node.data[:,0])):
+                if node.data[i,0] <= 200:
+                    node.data[i,0] = np.exp(node.data[i,0])
+                else:
+                    node.data[i,0] = 1e+10
         elif node.operator == 'inv':
-            node.data = 1/allcal(node.left,indata)
+            node.data = allcal(node.left,indata)
+            for i in np.arange(len(node.data[:,0])):
+                if node.data[i,0] == 0:
+                    node.data[i,0] = 0
+                else:
+                    node.data[i,0] = 1/node.data[i,0]
         elif node.operator == 'neg':
             node.data = -1 * allcal(node.left,indata)
         elif node.operator == 'sin':
@@ -593,7 +603,7 @@ def Prop(Root,n_feature,Ops,Op_weights,Op_type,beta,sigma_a,sigma_b):
                     det_node.parent.left = det_node.left
                     det_node.left.parent = det_node.parent
                 else:
-                    det_node.parent.right = det_node.right
+                    det_node.parent.right = det_node.left
                     det_node.left.parent = det_node.parent
             else:#binary
                 aa = np.random.uniform(0,1,1)[0]
@@ -1400,7 +1410,7 @@ x2 = np.random.uniform(0.1,5.9,n)
 x1 = pd.DataFrame(x1)
 x2 = pd.DataFrame(x2)
 train_data = pd.concat([x1,x2],axis=1)
-train_y = 2.5 * np.exp(train_data.iloc[:,0]) + np.cos(train_data.iloc[:,1])
+train_y = 6 * np.cos(train_data.iloc[:,0]) + np.sin(train_data.iloc[:,1])
 xx1 = []
 xx2 = []
 for i in np.arange(31):
@@ -1410,7 +1420,7 @@ for i in np.arange(31):
 xx1 = pd.DataFrame(xx1)
 xx2 = pd.DataFrame(xx2)
 test_data = pd.concat([xx1,xx2],axis=1)
-test_y = 2.5 * np.exp(test_data.iloc[:,0]) + np.cos(test_data.iloc[:,1])
+test_y = 6 * np.cos(test_data.iloc[:,0]) + np.sin(test_data.iloc[:,1])
 
 
 # =============================================================================
@@ -1423,10 +1433,10 @@ n_test = test_data.shape[0]
 
 alpha1 = 0.4
 alpha2 = 0.4
-beta = -0.8
+beta = -1
 
 Ops = ['inv','ln','neg','sin','cos','exp','+','*']
-Op_weights = [0.15,0.15,0.1,0.05,0.05,0.15,0.2,0.15]
+Op_weights = [0.125,0.125,0.125,0.125,0.125,0.125,0.125,0.125]
 Op_type = [1,1,1,1,1,1,2,2]
 n_op = len(Ops)
 
