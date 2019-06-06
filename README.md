@@ -39,7 +39,7 @@ Modify the definition of transform and detransform.
 ### Trans:
 Uniformly take a candidate node and place some operator as its parent
 ### Detrans:
-Uniformly take a candidate node and delete it; the candidate should not be 'ln', should not be the root if its child nodes are all terminal.
+Uniformly take a candidate node and delete it; the candidate node should be non-terminal, and should not be the root if its child nodes are all terminal.
 
 if it has two child nodes, randomly preserve one child (need to be non-terminal).
 ### Proposal:
@@ -52,3 +52,5 @@ P_detrans = (1-p_0)/3 * (Nc / Nc+3), Nc is the number of candidates for detransf
 P_trans = (1-p_0)/ 3 - P_detrans; The probs added nodes should be proportional to the preset weights.
 
 P_reop = P_refeat = (1-p_0)/ 6
+
+consider the proportions of (p_grow+p_prune), (p_detrans+p_trans), (p_reop+p_refeat)
