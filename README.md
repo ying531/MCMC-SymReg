@@ -11,13 +11,13 @@ Paper here: https://arxiv.org/abs/1910.08892
 
 `codes/simulations.py`: part of simulation settings in the paper
 
-`codes/funcs.py`: basic sampling functions used in 
+`codes/funcs.py`: basic sampling functions
 
 ## Pdf files
 
 `bsr_paper.pdf`: paper for Bayesian Symbolic Regression
 
-`Symbolic_Regression_Tree_MCMC.pdf`: note for proposed algorithm.
+`Symbolic_Regression_Tree_MCMC.pdf`: note for proposed algorithm
 
 ## Archived Versions
 
