@@ -5,21 +5,13 @@ Paper here: https://arxiv.org/abs/1910.08892
 
 ## API and Usage
 
-####  codes/BSR.py
+`codes/BSR.py`: API interface of BSR class
 
-API interface of BSR class
+`codes/bsr_class.py`: definition of BSR class
 
-#### codes/bsr_class.py
+`codes/simulations.py`: part of simulation settings in the paper
 
-definition of BSR class
-
-#### codes/simulations.py
-
-part of simulation settings in the paper
-
-#### codes/funcs.py
-
-basic sampling functions used in 
+`codes/funcs.py`: basic sampling functions used in 
 
 ## Pdf files
 
