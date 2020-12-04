@@ -1326,6 +1326,7 @@ noise = norm.rvs(loc=0,scale=0.5,size=len(yy))
 y = yy + noise
 '''
 
+'''
 # load data
 
 dat_amount = pd.read_csv("amount.csv")
@@ -1399,7 +1400,7 @@ train_data.index = np.arange(0,n_train)
 test_data.index = np.arange(0,n_test)
 #test_yy = list(test_yy)
 
-
+'''
 # =============================================================================
 # # y=2.5*exp(x0)+cos(x1)
 # =============================================================================
@@ -1410,7 +1411,7 @@ x2 = np.random.uniform(0.1,5.9,n)
 x1 = pd.DataFrame(x1)
 x2 = pd.DataFrame(x2)
 train_data = pd.concat([x1,x2],axis=1)
-train_y = 6 * np.cos(train_data.iloc[:,0]) + np.sin(train_data.iloc[:,1])
+train_y = 2.5 * np.exp(train_data.iloc[:,0]) + np.cos(train_data.iloc[:,1])
 xx1 = []
 xx2 = []
 for i in np.arange(31):
@@ -1420,7 +1421,7 @@ for i in np.arange(31):
 xx1 = pd.DataFrame(xx1)
 xx2 = pd.DataFrame(xx2)
 test_data = pd.concat([xx1,xx2],axis=1)
-test_y = 6 * np.cos(test_data.iloc[:,0]) + np.sin(test_data.iloc[:,1])
+test_y = 2.5 * np.exp(test_data.iloc[:,0]) + np.cos(test_data.iloc[:,1])
 
 
 # =============================================================================
