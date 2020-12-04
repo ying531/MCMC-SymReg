@@ -7,7 +7,7 @@ Created on Thu Dec  3 19:40:29 2020
 """
 
 import os
-base_path = "/Users/ying/Dropbox/Guo_Jin_Kang_Shared/SymReg/codes/MCMC-SymReg"
+base_path = ""
 os.chdir(base_path)
 from funcs import Operator, Node
 from funcs import grow, genList, shrink, upgOd, allcal, display, getHeight, getNum, numLT, upDepth, Express, fStruc
