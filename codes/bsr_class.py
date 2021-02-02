@@ -25,19 +25,42 @@ import random
 import time
 
 class BSR:
-    def __init__(self, treeNum, itrNum):
+    def __init__(self, treeNum=3, itrNum=5000, alpha1 = 0.4, alpha2=0.4,  beta=-1):
         self.treeNum = treeNum
         self.itrNum = itrNum
         self.roots = []
         self.betas = []
         self.train_err = []
+        self.alpha1 = alpha1
+        self.alpha2 = alpha2
+        self.beta_prior = beta
+        
+    def get_params(self, deep=True):
+    # suppose this estimator has parameters "alpha" and "recursive"
+        return {'treeNum': self.treeNum, 'itrNum': self.itrNum, 
+                'alpha1':self.alpha1, 'alpha2': self.alpha2, 'beta':self.beta}
+
+    def set_params(self, **parameters):
+        for parameter, value in parameters.items():
+            setattr(self, parameter, value)
+        return self
     
-    def display_trees(self, last_ind=1):
+    def model(self, last_ind=1):
         for i in  range(self.treeNum):
             print("========{}th tree========".format(i))
             print(Express(self.roots[-last_ind][i]))
+            
+    def complexity(self):
+        compl = 0
+        cmpls = []
+        for i in  range(self.treeNum):
+            root_node = self.roots[-1][i]
+            numm = getNum(root_node)
+            cmpls.append(numm)
+            compl = compl + numm
+        return(compl, compl)
         
-    def fit(self, test_data, method = 'last', last_ind = 1):
+    def predit(self, test_data, method = 'last', last_ind = 1):
         K = self.treeNum
         n_test = test_data.shape[0]
         XX = np.zeros((n_test, K))
@@ -59,13 +82,16 @@ class BSR:
     # alpha1, alpha2, beta are hyperparameters of priors
     # disp chooses whether to display intermediate results
         
-    def train(self, train_data, train_y, MM, K, alpha1=0.4, alpha2=0.4, beta=-1, disp=True):
+    def fit(self, train_data, train_y, disp=True):
         trainERRS = []
         #testERRS = []
         ROOTS = []
         BETAS = []
-        self.itrNum = MM
-        self.treeNum = K
+        MM = self.itrNum
+        K = self.treeNum 
+        alpha1 = self.alpha1
+        alpha2 = self.alpha2
+        beta = self.beta
         
         while len(trainERRS)<MM:
             
