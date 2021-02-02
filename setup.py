@@ -15,6 +15,6 @@ setup(name='bsr',
       author='Ying Jin',
       author_email='yjin1827@gmail.com',
       url='https://github.com/ying531/MCMC-SymReg',
-      packages = ['bsr'],
+      packages = ['MCMC-SymReg'],
       package_dir = {'MCMC-SymReg':'codes'}
 )
