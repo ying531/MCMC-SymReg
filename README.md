@@ -27,12 +27,14 @@ my_bsr = BSR(K,MM)
 # train (need to fill in parameters)
 # train_X is dataframe with each row a datapoint
 # train_y is series with default index
-my_bsr.train(train_X,train_y,MM,K)
+my_bsr.fit(train_X,train_y)
 # fit new values
 # new_X is dataframe of new data
-fitted_y = my_bsr.fit(new_X)
+fitted_y = my_bsr.predict(new_X)
 # display fitted trees
-my_bsr.display_trees()
+my_bsr.model()
+# complexity, including complexity of each tree & total
+complexity = my_bsr.complexity()
 ```
 
 >>>>>>> 
