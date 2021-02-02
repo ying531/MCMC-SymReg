@@ -7,11 +7,9 @@ Created on Thu Dec  3 19:40:29 2020
 """
 
 import os
-base_path = ""
-os.chdir(base_path)
-from funcs import Operator, Node
-from funcs import grow, genList, shrink, upgOd, allcal, display, getHeight, getNum, numLT, upDepth, Express, fStruc
-from funcs import ylogLike, newProp, Prop, auxProp
+from bsr.funcs import Operator, Node
+from bsr.funcs import grow, genList, shrink, upgOd, allcal, display, getHeight, getNum, numLT, upDepth, Express, fStruc
+from bsr.funcs import ylogLike, newProp, Prop, auxProp
 
 
 import numpy as np
@@ -46,9 +44,10 @@ class BSR:
         return self
     
     def model(self, last_ind=1):
+        modd =[]
         for i in  range(self.treeNum):
-            print("========{}th tree========".format(i))
-            print(Express(self.roots[-last_ind][i]))
+            modd.append(Express(self.roots[-last_ind][i]))
+        return(modd)
             
     def complexity(self):
         compl = 0
