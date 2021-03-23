@@ -31,7 +31,7 @@ class BSR:
         self.train_err = []
         self.alpha1 = alpha1
         self.alpha2 = alpha2
-        self.beta_prior = beta
+        self.beta = beta #WGL
         
     def get_params(self, deep=True):
     # suppose this estimator has parameters "alpha" and "recursive"
@@ -59,7 +59,7 @@ class BSR:
             compl = compl + numm
         return(compl, compl)
         
-    def predit(self, test_data, method = 'last', last_ind = 1):
+    def predict(self, test_data, method = 'last', last_ind = 1):
         K = self.treeNum
         n_test = test_data.shape[0]
         XX = np.zeros((n_test, K))

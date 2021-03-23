@@ -15,9 +15,7 @@ from scipy.stats import norm
 import sklearn
 from sklearn.datasets import load_iris
 import copy
-import matplotlib.pyplot as plt
 #import pymc3 as pm
-import seaborn
 import random
 #import data_generate_funcs as dg
 import time
