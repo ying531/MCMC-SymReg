@@ -15,6 +15,6 @@ setup(name='bsr',
       author='Ying Jin',
       author_email='yjin1827@gmail.com',
       url='https://github.com/ying531/MCMC-SymReg',
-      packages = ['MCMC-SymReg'],
-      package_dir = {'MCMC-SymReg':'codes'}
+      py_modules = ['bsr.bsr_class','bsr.BSR','bsr.funcs'],
+      package_dir = {'bsr':'codes'}
 )
