@@ -82,6 +82,8 @@ class BSR:
     # disp chooses whether to display intermediate results
         
     def fit(self, train_data, train_y, disp=True):
+        if isinstance(train_data, np.ndarray):
+            train_data = pd.DataFrame(train_data)
         trainERRS = []
         #testERRS = []
         ROOTS = []
