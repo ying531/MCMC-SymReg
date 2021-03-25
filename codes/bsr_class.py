@@ -23,7 +23,8 @@ import random
 import time
 
 class BSR:
-    def __init__(self, treeNum=3, itrNum=5000, alpha1 = 0.4, alpha2=0.4,  beta=-1):
+    def __init__(self, treeNum=3, itrNum=5000, alpha1 = 0.4, alpha2=0.4,  
+                 beta=-1, disp=False, val=100):
         self.treeNum = treeNum
         self.itrNum = itrNum
         self.roots = []
@@ -32,6 +33,8 @@ class BSR:
         self.alpha1 = alpha1
         self.alpha2 = alpha2
         self.beta = beta #WGL
+        self.disp = disp #WGL
+        self.val = val #WGL
         
     def get_params(self, deep=True):
     # suppose this estimator has parameters "alpha" and "recursive"
@@ -57,9 +60,11 @@ class BSR:
             numm = getNum(root_node)
             cmpls.append(numm)
             compl = compl + numm
-        return(compl, compl)
+        return(compl)
         
     def predict(self, test_data, method = 'last', last_ind = 1):
+        if isinstance(test_data, np.ndarray):
+            test_data = pd.DataFrame(test_data)
         K = self.treeNum
         n_test = test_data.shape[0]
         XX = np.zeros((n_test, K))
@@ -81,7 +86,7 @@ class BSR:
     # alpha1, alpha2, beta are hyperparameters of priors
     # disp chooses whether to display intermediate results
         
-    def fit(self, train_data, train_y, disp=True):
+    def fit(self, train_data, train_y):
         if isinstance(train_data, np.ndarray):
             train_data = pd.DataFrame(train_data)
         trainERRS = []
@@ -120,7 +125,7 @@ class BSR:
             
             sigma = invgamma.rvs(1)  # for output y
             
-            val = 100
+            #val = 100
             
             # Initialization
             for count in np.arange(K):
@@ -166,7 +171,7 @@ class BSR:
             
             tic = time.time()
             
-            while total < val:
+            while total < self.val:
                 Roots = []  # list of current components
                 # for count in np.arange(K):
                 #     Roots.append(RootLists[count][-1])
@@ -225,7 +230,7 @@ class BSR:
                         rmse = np.sqrt(error / n_train)
                         errList.append(rmse)
                         
-                        if disp:
+                        if self.disp:
     
                             print("accept", accepted, "th after", total, "proposals and update ", count, "th component")
                             print("sigma:", round(sigma, 5), "error:", round(rmse, 5))  # ,"log.likelihood:",round(llh,5))
@@ -247,12 +252,13 @@ class BSR:
                 if switch_label:
                     break
                 
-            for i in np.arange(0,len(train_y)):
-                print(output[i,0],train_y[i])
+            if self.disp:
+                for i in np.arange(0,len(train_y)):
+                    print(output[i,0],train_y[i])
             
             toc = time.time() # cauculate running time
             tictoc = toc-tic
-            if disp:
+            if self.disp:
                 print("run time:{:.2f}s".format(tictoc))
             
                 print("------")
