@@ -10,7 +10,7 @@ Created on Tue Feb  2 10:31:13 2021
 from setuptools import setup
 
 setup(name='bsr',
-      version='0.1',
+      version='0.1.1',
       description='A Bayesian MCMC based Symbolic Regression Algorithm',
       author='Ying Jin',
       author_email='yjin1827@gmail.com',
