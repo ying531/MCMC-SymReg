@@ -16,61 +16,54 @@ import numpy as np
 import pandas as pd
 from scipy.stats import invgamma
 from scipy.stats import norm
+from sklearn.base import BaseEstimator, RegressorMixin
 import sklearn
 import copy
 import matplotlib.pyplot as plt
 import random
 import time
 
-class BSR:
-    def __init__(self, treeNum=3, itrNum=5000, alpha1 = 0.4, alpha2=0.4,  beta=-1):
+class BSR(BaseEstimator,RegressorMixin):
+    def __init__(self, treeNum=3, itrNum=5000, alpha1 = 0.4, alpha2=0.4,  
+                 beta=-1, disp=False, val=100):
         self.treeNum = treeNum
         self.itrNum = itrNum
-        self.roots = []
-        self.betas = []
-        self.train_err = []
         self.alpha1 = alpha1
         self.alpha2 = alpha2
-        self.beta_prior = beta
+        self.beta = beta #WGL
+        self.disp = disp #WGL
+        self.val = val #WGL
         
-    def get_params(self, deep=True):
-    # suppose this estimator has parameters "alpha" and "recursive"
-        return {'treeNum': self.treeNum, 'itrNum': self.itrNum, 
-                'alpha1':self.alpha1, 'alpha2': self.alpha2, 'beta':self.beta}
-
-    def set_params(self, **parameters):
-        for parameter, value in parameters.items():
-            setattr(self, parameter, value)
-        return self
-    
     def model(self, last_ind=1):
         modd =[]
         for i in  range(self.treeNum):
-            modd.append(Express(self.roots[-last_ind][i]))
+            modd.append(Express(self.roots_[-last_ind][i]))
         return(modd)
             
     def complexity(self):
         compl = 0
         cmpls = []
         for i in  range(self.treeNum):
-            root_node = self.roots[-1][i]
+            root_node = self.roots_[-1][i]
             numm = getNum(root_node)
             cmpls.append(numm)
             compl = compl + numm
-        return(compl, compl)
+        return(compl)
         
-    def predit(self, test_data, method = 'last', last_ind = 1):
+    def predict(self, test_data, method = 'last', last_ind = 1):
+        if isinstance(test_data, np.ndarray):
+            test_data = pd.DataFrame(test_data)
         K = self.treeNum
         n_test = test_data.shape[0]
         XX = np.zeros((n_test, K))
         if method == 'last':
             for countt in np.arange(K):
-                temp = allcal(self.roots[-last_ind][countt], test_data)
+                temp = allcal(self.roots_[-last_ind][countt], test_data)
                 temp.shape = (temp.shape[0])
                 XX[:, countt] = temp
             constant = np.ones((n_test, 1))
             XX = np.concatenate((constant, XX), axis=1)
-            Beta = self.betas[-last_ind]
+            Beta = self.betas_[-last_ind]
             toutput = np.matmul(XX, Beta)
         return(toutput)
     
@@ -81,7 +74,17 @@ class BSR:
     # alpha1, alpha2, beta are hyperparameters of priors
     # disp chooses whether to display intermediate results
         
-    def fit(self, train_data, train_y, disp=True):
+    def fit(self, train_data, train_y):
+        
+        #WGL: moved these to fit and added underscore, 
+        #since they are not user parameters
+        self.roots_ = []
+        self.betas_ = []
+        self.train_err_ = []
+
+        #WGL: train_data must be a dataframe
+        if isinstance(train_data, np.ndarray):
+            train_data = pd.DataFrame(train_data)
         trainERRS = []
         #testERRS = []
         ROOTS = []
@@ -91,7 +94,8 @@ class BSR:
         alpha1 = self.alpha1
         alpha2 = self.alpha2
         beta = self.beta
-        
+       
+        if self.disp: print('starting training...')
         while len(trainERRS)<MM:
             
             
@@ -118,7 +122,7 @@ class BSR:
             
             sigma = invgamma.rvs(1)  # for output y
             
-            val = 100
+            #val = 100
             
             # Initialization
             for count in np.arange(K):
@@ -128,6 +132,7 @@ class BSR:
                 sigma_b = invgamma.rvs(1)
             
                 # grow a tree from the Root node
+                if self.disp: print('grow a tree from the Root node')
                 grow(Root, n_feature, Ops, Op_weights, Op_type, beta, sigma_a, sigma_b)
                 # Tree = genList(Root)
             
@@ -137,6 +142,7 @@ class BSR:
                 SigbList.append(sigma_b)
             
             # calculate beta
+            if self.disp: print('calculate beta')
             # added a constant in the regression by fwl
             XX = np.zeros((n_train, K))
             for count in np.arange(K):
@@ -164,7 +170,8 @@ class BSR:
             
             tic = time.time()
             
-            while total < val:
+            if self.disp: print('while total < ',self.val)
+            while total < self.val:
                 Roots = []  # list of current components
                 # for count in np.arange(K):
                 #     Roots.append(RootLists[count][-1])
@@ -178,10 +185,12 @@ class BSR:
                     sigma_b = SigbList[count]
             
                     # the returned Root is a new copy
+                    if self.disp: print('newProp...')
                     [res, sigma, Root, sigma_a, sigma_b] = newProp(Roots, count, sigma, train_y, train_data, n_feature, Ops,
                                                                    Op_weights, Op_type, beta, sigma_a, sigma_b)
-                    # print("res:",res)
-                    # display(genList(Root))
+                    if self.disp:
+                        print("res:",res)
+                        display(genList(Root))
             
                     total += 1
                     # update sigma_a and sigma_b
@@ -223,7 +232,7 @@ class BSR:
                         rmse = np.sqrt(error / n_train)
                         errList.append(rmse)
                         
-                        if disp:
+                        if self.disp:
     
                             print("accept", accepted, "th after", total, "proposals and update ", count, "th component")
                             print("sigma:", round(sigma, 5), "error:", round(rmse, 5))  # ,"log.likelihood:",round(llh,5))
@@ -245,12 +254,13 @@ class BSR:
                 if switch_label:
                     break
                 
-            for i in np.arange(0,len(train_y)):
-                print(output[i,0],train_y[i])
+            if self.disp:
+                for i in np.arange(0,len(train_y)):
+                    print(output[i,0],train_y[i])
             
             toc = time.time() # cauculate running time
             tictoc = toc-tic
-            if disp:
+            if self.disp:
                 print("run time:{:.2f}s".format(tictoc))
             
                 print("------")
@@ -261,9 +271,9 @@ class BSR:
             #testERRS.append(testList)
             ROOTS.append(Roots)
             BETAS.append(Beta)
-        self.roots = ROOTS
-        self.train_err = trainERRS
-        self.betas = BETAS
+        self.roots_ = ROOTS
+        self.train_err_ = trainERRS
+        self.betas_ = BETAS
             
         return
         
@@ -496,9 +506,3 @@ def symreg(K,MM, train_data,test_data, train_y, test_y, disp=True):
         ROOTS.append(Roots)
         
     return(ROOTS)
-
-
-
-
-
-
