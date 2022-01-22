@@ -493,6 +493,11 @@ def Prop(Root, n_feature, Ops, Op_weights, Op_type, beta, sigma_a, sigma_b):
         # calculate Q and Qinv
         Q = p_stay
         Qinv = p_stay
+        # update all linear nodes 
+        for i in np.arange(0, len(Tree)):
+            if Tree[i].operator == 'ln':
+                Tree[i].a = norm.rvs(loc=1,scale=np.sqrt(sigma_a))
+                Tree[i].b = norm.rvs(loc=1,scale=np.sqrt(sigma_b))
 
     # grow
     elif test <= p_stay + p_grow:
